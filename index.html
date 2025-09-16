@@ -1,162 +1,96 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Laboratorio de Suelos JCH</title>
+  <meta charset="utf-8">
+  <title>Redireccionando...</title>
   <style>
-    * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+      body {
+        background-color: lightblue;
+        font-family: sans-serif;
+        text-align: center;
+        padding-top: 50px;
+      }
+      
+      .lds-ring {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 80px;
+      }
+      .lds-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border: 8px solid #fff;
+        border-radius: 50%;
+        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #fff transparent transparent transparent;
+      }
+      .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
+      .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
+      .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
+      @keyframes lds-ring {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
 
-body,
-html {
-  height: 100%;
-  font-family: 'Arial', sans-serif;
-}
-
-.hero {
-  background: url('img/back-1.jpg') no-repeat center center / cover;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1;
-}
-
-.content {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  color: #fff;
-}
-
-.content h1 {
-  font-size: 3rem;
-  margin-bottom: 0.5em;
-  text-transform: uppercase;
-}
-
-@media (max-width: 600px) {
-  .content h1 {
-    font-size: 2rem;
-    margin-top: -250px;
-  }
-}
-
-/* Loader centrado */
-.lds-ring {
-  position: absolute;
-  top: 5%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  color: #FF5733;
-  z-index: 3;
-}
-
-.lds-ring div {
-  box-sizing: border-box;
-  display: block;
-  position: absolute;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border: 8px solid currentColor;
-  border-radius: 50%;
-  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: currentColor transparent transparent transparent;
-}
-
-.lds-ring div:nth-child(1) {
-  animation-delay: -0.45s;
-}
-
-.lds-ring div:nth-child(2) {
-  animation-delay: -0.3s;
-}
-
-.lds-ring div:nth-child(3) {
-  animation-delay: -0.15s;
-}
-
-@keyframes lds-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
+      #message {
+        color: #c0392b;
+        font-size: 1.2em;
+        margin-top: 20px;
+      }
   </style>
 </head>
 <body>
-  <main class="hero">
-    <div class="overlay"></div>
-    <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
-    <section class="content">
-      <h1>Laboratorio de Suelos JCH</h1>
-    </section>
-  </main>
 
+  <div id="status-container">
+    <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    <p id="message"></p>
+  </div>
+  
   <script>
-   const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbxx9NWUSOFLLfflC36ePTY6lqa0FmfwqPTgFavZaBzIA3rqQDSED9v7hqz8mSG1EwJ0pA/exec";
+    // ⬇️ PEGA AQUÍ LA NUEVA URL DE TU WEB APP DESPLEGADA ⬇️
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbwzKRJ10gwD6IQa44xyQbngjqxuDRZ9WHAOk4jWlnR5oQK0iIR5yzYhFv5NJLeMCLTHLA/exec";
+    
+    // Extrae la clave 'k' de la URL de esta página
     const currentUrl = new URL(document.location.href);
     const k = currentUrl.searchParams.get("k");
-
+    
     const messageElement = document.getElementById('message');
     const spinnerElement = document.querySelector('.lds-ring');
-
-    spinnerElement.style.display = 'block';
-
+    
     if (k) {
-      // Validación básica del parámetro
-      if (!/^[a-z0-9\-_]+$/i.test(k)) {
-        spinnerElement.style.display = 'none';
-        messageElement.textContent = 'La clave proporcionada no es válida.';
-        return;
-      }
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 7000); // 7 segundos
-
-      fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, { signal: controller.signal })
-        .then(response => response.json())
+      // Llama a la API
+      fetch(AS_URL_BASE + '?k=' + k)
+        .then(response => response.json()) // Convierte la respuesta a JSON
         .then(data => {
-          clearTimeout(timeout);
+          // Para depurar, puedes ver la respuesta completa en la consola
           console.log("Respuesta de la API:", data);
+          
+          // Revisa el estado y actúa en consecuencia
           if (data.status === 'success' && data.url) {
+            // Si todo está bien, redirige al usuario
             document.location.replace(data.url);
           } else {
-            spinnerElement.style.display = 'none';
+            // Si hay un error o no se encuentra, muestra un mensaje
+            spinnerElement.style.display = 'none'; // Oculta el spinner
             messageElement.textContent = `Error: ${data.message || 'La clave no fue encontrada.'}`;
           }
         })
         .catch(err => {
-          clearTimeout(timeout);
           console.error("Error en el fetch:", err);
-          spinnerElement.style.display = 'none';
-          messageElement.textContent = 'Hubo un problema de conexión. Inténtalo de nuevo.';
+          spinnerElement.style.display = 'none'; // Oculta el spinner
+          messageElement.textContent = 'Hubo un problema de conexión. Revisa que la URL sea correcta y la app esté bien desplegada.';
         });
     } else {
-      spinnerElement.style.display = 'none';
-      messageElement.textContent = 'No se ha proporcionado una clave para buscar.';
+        spinnerElement.style.display = 'none'; // Oculta el spinner
+        messageElement.textContent = 'No se ha proporcionado una clave para buscar.';
     }
+
   </script>
+  
 </body>
 </html>
