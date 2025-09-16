@@ -1,77 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
-  <title></title>
+  <title>Redireccionando...</title>
   <style>
       body {
         background-color: lightblue;
+        font-family: sans-serif;
         text-align: center;
+        padding-top: 50px;
       }
       
       .lds-ring {
-  display: inline-block;
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-.lds-ring div {
-  box-sizing: border-box;
-  display: block;
-  position: absolute;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border: 8px solid #fff;
-  border-radius: 50%;
-  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: #fff transparent transparent transparent;
-}
-.lds-ring div:nth-child(1) {
-  animation-delay: -0.45s;
-}
-.lds-ring div:nth-child(2) {
-  animation-delay: -0.3s;
-}
-.lds-ring div:nth-child(3) {
-  animation-delay: -0.15s;
-}
-@keyframes lds-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 80px;
+      }
+      .lds-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border: 8px solid #fff;
+        border-radius: 50%;
+        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #fff transparent transparent transparent;
+      }
+      .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
+      .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
+      .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
+      @keyframes lds-ring {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
 
+      #message {
+        color: #c0392b;
+        font-size: 1.2em;
+        margin-top: 20px;
+      }
   </style>
 </head>
 <body>
+
+  <div id="status-container">
+    <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    <p id="message"></p>
+  </div>
+  
   <script>
-    //const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbymRGGsciZze-RB19xWubAnzL9ccwpsgABEVroQ6ciPmFZby8OOlqIM04l4qapfaZdK/exec";
+    // URL de tu Web App de Google Apps Script
     const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbxgkGVUFnRZfrdnqCCXuZ9r_EOgigPojFtijptvzoDaDRGGbrUK7FnBw8HfIuOhUuTGvw/exec";
     
-    var url = document.location.href;
-    var k = url.substr(url.lastIndexOf("k=")+2);
+    // Extrae la clave 'k' de la URL de esta página
+    const currentUrl = new URL(document.location.href);
+    const k = currentUrl.searchParams.get("k");
     
-    if(k){
-      fetch(AS_URL_BASE+'?k='+k)
-      .then(r => r.text())
-      .then((r) => {
-        console.log(r);
-        //document.write(r);
-        if(r){
-          document.location.replace(r);
-        }
-      })
-      .catch(err => console.log(err))
+    const messageElement = document.getElementById('message');
+    const spinnerElement = document.querySelector('.lds-ring');
+    
+    if (k) {
+      // 1. Llama a la API
+      fetch(AS_URL_BASE + '?k=' + k)
+        // 2. Convierte la respuesta a JSON en lugar de texto
+        .then(response => response.json())
+        // 3. Trabaja con el objeto 'data'
+        .then(data => {
+          console.log("Respuesta de la API:", data); // Para depuración
+          
+          // 4. Revisa el estado y actúa en consecuencia
+          if (data.status === 'success' && data.url) {
+            // Si todo está bien, redirige al usuario
+            document.location.replace(data.url);
+          } else {
+            // Si hay un error o no se encuentra, muestra un mensaje
+            spinnerElement.style.display = 'none'; // Oculta el spinner
+            messageElement.textContent = `Error: ${data.message || 'La clave no fue encontrada.'}`;
+          }
+        })
+        .catch(err => {
+          console.error("Error en el fetch:", err);
+          spinnerElement.style.display = 'none'; // Oculta el spinner
+          messageElement.textContent = 'Hubo un problema de conexión. Inténtalo de nuevo.';
+        });
+    } else {
+        spinnerElement.style.display = 'none'; // Oculta el spinner
+        messageElement.textContent = 'No se ha proporcionado una clave para buscar.';
     }
 
   </script>
-  
-  <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
-  
   
 </body>
 </html>
