@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Redireccionando...</title>
+  <title>Redirector</title>
   <style>
       body {
         background-color: lightblue;
-        font-family: sans-serif;
         text-align: center;
+        font-family: Arial, sans-serif;
         padding-top: 50px;
       }
       
@@ -36,61 +36,49 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-
-      #message {
-        color: #c0392b;
-        font-size: 1.2em;
-        margin-top: 20px;
-      }
   </style>
 </head>
 <body>
+  <h2>Redirigiendo...</h2>
+  <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
 
-  <div id="status-container">
-    <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
-    <p id="message"></p>
-  </div>
-  
   <script>
-    // ⬇️ PEGA AQUÍ LA NUEVA URL DE TU WEB APP DESPLEGADA ⬇️
-    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbwHFtBhZbd6j3NyuzFkPE_DVrPHsME4n4RsdHJbOuBPn24FHXLd7eYYU3HvouITqJSIIw/exec";
-    
-    // Extrae la clave 'k' de la URL de esta página
-    const currentUrl = new URL(document.location.href);
-    const k = currentUrl.searchParams.get("k");
-    
-    const messageElement = document.getElementById('message');
-    const spinnerElement = document.querySelector('.lds-ring');
-    
-    if (k) {
-      // Llama a la API
-      fetch(AS_URL_BASE + '?k=' + k)
-        .then(response => response.json()) // Convierte la respuesta a JSON
-        .then(data => {
-          // Para depurar, puedes ver la respuesta completa en la consola
-          console.log("Respuesta de la API:", data);
-          
-          // Revisa el estado y actúa en consecuencia
-          if (data.status === 'success' && data.url) {
-            // Si todo está bien, redirige al usuario
-            document.location.replace(data.url);
-          } else {
-            // Si hay un error o no se encuentra, muestra un mensaje
-            spinnerElement.style.display = 'none'; // Oculta el spinner
-            messageElement.textContent = `Error: ${data.message || 'La clave no fue encontrada.'}`;
-          }
-        })
-        .catch(err => {
-          console.error("Error en el fetch:", err);
-          spinnerElement.style.display = 'none'; // Oculta el spinner
-          messageElement.textContent = 'Hubo un problema de conexión. Revisa que la URL sea correcta y la app esté bien desplegada.';
-        });
-    } else {
-        spinnerElement.style.display = 'none'; // Oculta el spinner
-        messageElement.textContent = 'No se ha proporcionado una clave para buscar.';
+    // 👉 Reemplaza con la URL de tu WebApp publicada
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbzMVz1OQy09WPAa-JvSQhY-FbDuObwHAduuRbQQJC7qy7tRghtmi_jpHUId5Ujel5prbg/exec";
+
+    // Leer parámetro "k" de la URL (ej: index.html?k=promo1)
+    function getParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
     }
 
+    async function redirect() {
+      const k = getParam("k");
+      if (!k) {
+        document.body.innerHTML = "<h2>❌ Falta el parámetro 'k'.</h2>";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`);
+        const data = await response.json();
+
+        if (data.status === "success" && data.url) {
+          // ✅ Redirige a la URL encontrada
+          window.location.href = data.url;
+        } else if (data.status === "not_found") {
+          document.body.innerHTML = `<h2>⚠️ La clave "${k}" no existe.</h2>`;
+        } else {
+          document.body.innerHTML = `<h2>❌ Error: ${data.message || "Unknown error"}</h2>`;
+        }
+      } catch (err) {
+        console.error(err);
+        document.body.innerHTML = "<h2>❌ Error al conectar con el servidor.</h2>";
+      }
+    }
+
+    // Ejecutar al cargar
+    redirect();
   </script>
-  
 </body>
 </html>
