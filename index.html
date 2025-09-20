@@ -1,173 +1,122 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Laboratorio de Suelos JCH</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body,
-    html {
-      height: 100%;
-      font-family: 'Arial', sans-serif;
-    }
-
-    .hero {
-      background: url('https://github.com/laboratoriodesuelosjch/laboratoriodesuelosjch.github.io/blob/main/img/back-1.jpg') no-repeat center center / cover;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      z-index: 1;
-    }
-
-    .content {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      color: #fff;
-    }
-
-    .content h1 {
-      font-size: 3rem;
-      margin-bottom: 1em;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .content p {
-      font-size: 1.2rem;
-      margin-bottom: 2em;
-    }
-
-    /* Loader mejorado */
-    .loader-container {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 3;
-    }
-
-    .lds-ring {
-      display: inline-block;
-      width: 80px;
-      height: 80px;
-      color: #FF5733;
-    }
-
-    .lds-ring div {
-      box-sizing: border-box;
-      display: block;
-      position: absolute;
-      width: 64px;
-      height: 64px;
-      margin: 8px;
-      border: 8px solid currentColor;
-      border-radius: 50%;
-      animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-      border-color: currentColor transparent transparent transparent;
-    }
-
-    .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
-    .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
-    .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
-
-    @keyframes lds-ring {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Mensaje de error */
-    .error {
-      color: #ff6b6b;
-      font-size: 1.1rem;
-      margin-top: 1em;
-    }
-
-    @media (max-width: 600px) {
-      .content h1 {
-        font-size: 2rem;
-        margin-top: 0;
-      }
-    }
+    /* Simplificado: adaptalo a tu diseño */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:Arial,Helvetica,sans-serif;}
+    .hero{background:#111 url('https://github.com/laboratoriodesuelosjch/laboratoriodesuelosjch.github.io/blob/main/img/back-1.jpg') no-repeat center/cover;height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+    .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+    .content{position:relative;z-index:2;color:#fff;text-align:center;padding:1rem}
+    h1{font-size:2.5rem;letter-spacing:.05em}
+    .loader{position:absolute;top:2rem;left:50%;transform:translateX(-50%);z-index:3}
+    .message{margin-top:1.25rem;font-size:1rem}
+    .btn{display:inline-block;margin-top:1rem;padding:.5rem 1rem;border-radius:6px;border:0;background:#FF6B35;color:#fff;cursor:pointer}
+    .hidden{display:none}
+    @media(max-width:600px){h1{font-size:1.6rem}}
   </style>
 </head>
 <body>
-  <main class="hero">
+  <main class="hero" role="main" aria-live="polite">
     <div class="overlay"></div>
-    <div class="loader-container">
-      <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+
+    <div class="loader" id="loader" aria-hidden="false">
+      <!-- spinner simple -->
+      <svg width="48" height="48" viewBox="0 0 50 50" aria-hidden="true">
+        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" stroke-linecap="round" stroke-dasharray="31.4 31.4">
+          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+        </circle>
+      </svg>
     </div>
+
     <section class="content">
       <h1>Laboratorio de Suelos JCH</h1>
-      <p>Redirigiendo...</p>
-      <div id="error-message" class="error"></div>
+      <div class="message" id="message">Verificando código...</div>
+      <button id="goBase" class="btn hidden">Ir a la página principal</button>
     </section>
   </main>
 
   <script>
-    // ⚠️ ¡REEMPLAZA ESTA URL POR LA QUE TE GENERÓ GOOGLE APPS SCRIPT AL DESPLEGAR!
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz81hw8UtP3GTc1L_b5TGiJP_ge3hYNlCOrgNVUQ2DlrKlA3WQk9NICgiVVy2oYJJ83/exec";
+    // REPLACE con la URL de tu Web App (el /exec)
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbxwz4nI6XoJbJpAtDEVKcH1mbk7mjonZ9L36QcL0bmhaWq5U01sPHR6BjtUu70qEpEM/exec";
 
-    // Función para obtener parámetro de URL
-    const getUrlParam = (name) => {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    };
+    const loader = document.getElementById('loader');
+    const messageEl = document.getElementById('message');
+    const goBaseBtn = document.getElementById('goBase');
 
-    // Función principal de redirección
-    const handleRedirection = async () => {
-      const k = getUrlParam('k');
-      const errorMessage = document.getElementById('error-message');
+    function showMessage(text, isError) {
+      loader.classList.toggle('hidden', false);
+      messageEl.textContent = text || '';
+      messageEl.style.color = isError ? '#ffb3b3' : '#fff';
+    }
 
-      if (!k) {
-        errorMessage.textContent = "Código no válido.";
-        return;
-      }
+    function hideLoader() {
+      loader.classList.add('hidden');
+    }
 
+    (async function main(){
       try {
-        const response = await fetch(`${SCRIPT_URL}?k=${encodeURIComponent(k)}`, {
-          method: 'GET',
-          redirect: 'follow'
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const params = new URLSearchParams(window.location.search);
+        const k = params.get('k');
+        if (!k) {
+          showMessage('No se encontró el parámetro "k" en la URL.', true);
+          hideLoader();
+          // mostramos botón para ir al base (si lo conoces)
+          goBaseBtn.classList.remove('hidden');
+          goBaseBtn.onclick = () => { window.location.href = '/'; };
+          return;
         }
 
-        const targetUrl = await response.text();
+        showMessage('Buscando destino para el código...');
+        // timeout con AbortController
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 6000);
 
-        if (targetUrl && targetUrl.trim()) {
-          window.location.replace(targetUrl.trim());
+        const resp = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, { method: 'GET', signal: controller.signal, cache: 'no-store' });
+        clearTimeout(timeout);
+
+        if (!resp.ok) {
+          showMessage('Error en la comunicación con el servicio. Inténtalo de nuevo.', true);
+          return;
+        }
+
+        const data = await resp.json();
+        if (data && data.ok && data.url) {
+          showMessage('Redirigiendo...', false);
+          // reemplaza la ubicación (sin dejar historial)
+          window.location.replace(data.url);
+          return;
         } else {
-          errorMessage.textContent = "Código no encontrado.";
+          const err = (data && data.error) ? data.error : 'URL no encontrada';
+          showMessage('No se encontró la URL asociada: ' + err, true);
+          hideLoader();
+          goBaseBtn.classList.remove('hidden');
+          goBaseBtn.onclick = () => { window.location.href = '/'; };
         }
-      } catch (error) {
-        console.error("Error en redirección:", error);
-        errorMessage.textContent = "Error al procesar la solicitud.";
-      }
-    };
 
-    // Ejecutar al cargar
-    document.addEventListener('DOMContentLoaded', handleRedirection);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          showMessage('Tiempo de espera agotado. Inténtalo de nuevo.', true);
+        } else {
+          showMessage('Ocurrió un error: ' + (err.message || err), true);
+        }
+        hideLoader();
+        goBaseBtn.classList.remove('hidden');
+        goBaseBtn.onclick = () => { window.location.href = '/'; };
+      }
+    })();
   </script>
+
+  <noscript>
+    <meta http-equiv="refresh" content="5;url=/">
+    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#111;color:#fff;">
+      Esta página requiere JavaScript para redirigir. Serás llevado a la página principal en 5s.
+    </div>
+  </noscript>
 </body>
 </html>
-      
+
+     
