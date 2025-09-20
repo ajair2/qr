@@ -46,27 +46,30 @@
 
     .content h1 {
       font-size: 3rem;
-      margin-bottom: 0.5em;
+      margin-bottom: 1em;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    @media (max-width: 600px) {
-      .content h1 {
-        font-size: 2rem;
-        margin-top: -250px;
-      }
+    .content p {
+      font-size: 1.2rem;
+      margin-bottom: 2em;
     }
 
-    /* Loader centrado */
-    .lds-ring {
+    /* Loader mejorado */
+    .loader-container {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .lds-ring {
+      display: inline-block;
       width: 80px;
       height: 80px;
       color: #FF5733;
-      z-index: 3;
     }
 
     .lds-ring div {
@@ -82,87 +85,89 @@
       border-color: currentColor transparent transparent transparent;
     }
 
-    .lds-ring div:nth-child(1) {
-      animation-delay: -0.45s;
-    }
-
-    .lds-ring div:nth-child(2) {
-      animation-delay: -0.3s;
-    }
-
-    .lds-ring div:nth-child(3) {
-      animation-delay: -0.15s;
-    }
+    .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
+    .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
+    .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
 
     @keyframes lds-ring {
-      0% {
-        transform: rotate(0deg);
-      }
-      100% {
-        transform: rotate(360deg);
-      }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
+    /* Mensaje de error */
     .error {
       color: #ff6b6b;
-      margin-top: 20px;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      margin-top: 1em;
+    }
+
+    @media (max-width: 600px) {
+      .content h1 {
+        font-size: 2rem;
+        margin-top: 0;
+      }
     }
   </style>
 </head>
 <body>
   <main class="hero">
     <div class="overlay"></div>
-    <div class="lds-ring" id="loader">
-      <div></div><div></div><div></div><div></div>
+    <div class="loader-container">
+      <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
     </div>
     <section class="content">
       <h1>Laboratorio de Suelos JCH</h1>
-      <div id="error" class="error" style="display:none;"></div>
+      <p>Redirigiendo...</p>
+      <div id="error-message" class="error"></div>
     </section>
   </main>
 
   <script>
-    // URL del Web App de Google Apps Script (¡SIN ESPACIOS!)
-    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbz81hw8UtP3GTc1L_b5TGiJP_ge3hYNlCOrgNVUQ2DlrKlA3WQk9NICgiVVy2oYJJ83/exec";
+    // ⚠️ ¡REEMPLAZA ESTA URL POR LA QUE TE GENERÓ GOOGLE APPS SCRIPT AL DESPLEGAR!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz81hw8UtP3GTc1L_b5TGiJP_ge3hYNlCOrgNVUQ2DlrKlA3WQk9NICgiVVy2oYJJ83/exec";
 
-    // Obtener parámetro 'k' de la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const k = urlParams.get('k')?.trim();
+    // Función para obtener parámetro de URL
+    const getUrlParam = (name) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    };
 
-    const loader = document.getElementById('loader');
-    const errorDiv = document.getElementById('error');
+    // Función principal de redirección
+    const handleRedirection = async () => {
+      const k = getUrlParam('k');
+      const errorMessage = document.getElementById('error-message');
 
-    if (!k) {
-      loader.style.display = 'none';
-      errorDiv.textContent = "Código QR no válido.";
-      errorDiv.style.display = 'block';
-      console.warn("Parámetro 'k' no encontrado en la URL.");
-    } else {
-      fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.text();
-        })
-        .then(destinationUrl => {
-          loader.style.display = 'none';
-          if (destinationUrl && destinationUrl.trim()) {
-            console.log("Redirigiendo a:", destinationUrl);
-            window.location.replace(destinationUrl);
-          } else {
-            errorDiv.textContent = "Código QR no reconocido.";
-            errorDiv.style.display = 'block';
-          }
-        })
-        .catch(err => {
-          console.error("Error al procesar el código QR:", err);
-          loader.style.display = 'none';
-          errorDiv.textContent = "Error al procesar la solicitud. Intente nuevamente.";
-          errorDiv.style.display = 'block';
+      if (!k) {
+        errorMessage.textContent = "Código no válido.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${SCRIPT_URL}?k=${encodeURIComponent(k)}`, {
+          method: 'GET',
+          redirect: 'follow'
         });
-    }
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const targetUrl = await response.text();
+
+        if (targetUrl && targetUrl.trim()) {
+          window.location.replace(targetUrl.trim());
+        } else {
+          errorMessage.textContent = "Código no encontrado.";
+        }
+      } catch (error) {
+        console.error("Error en redirección:", error);
+        errorMessage.textContent = "Error al procesar la solicitud.";
+      }
+    };
+
+    // Ejecutar al cargar
+    document.addEventListener('DOMContentLoaded', handleRedirection);
   </script>
 </body>
 </html>
+      
