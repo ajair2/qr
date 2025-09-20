@@ -1,84 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>Redirector</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laboratorio de Suelos JCH</title>
   <style>
-      body {
-        background-color: lightblue;
-        text-align: center;
-        font-family: Arial, sans-serif;
-        padding-top: 50px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      height: 100%;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .hero {
+      background: url('img/back-1.jpg') no-repeat center center / cover;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: #fff;
+    }
+
+    .content h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 600px) {
+      .content h1 {
+        font-size: 2rem;
+        margin-top: -250px;
       }
-      
-      .lds-ring {
-        display: inline-block;
-        position: relative;
-        width: 80px;
-        height: 80px;
+    }
+
+    /* Loader centrado */
+    .lds-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      color: #FF5733;
+      z-index: 3;
+    }
+
+    .lds-ring div {
+      box-sizing: border-box;
+      display: block;
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      margin: 8px;
+      border: 8px solid currentColor;
+      border-radius: 50%;
+      animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      border-color: currentColor transparent transparent transparent;
+    }
+
+    .lds-ring div:nth-child(1) {
+      animation-delay: -0.45s;
+    }
+
+    .lds-ring div:nth-child(2) {
+      animation-delay: -0.3s;
+    }
+
+    .lds-ring div:nth-child(3) {
+      animation-delay: -0.15s;
+    }
+
+    @keyframes lds-ring {
+      0% {
+        transform: rotate(0deg);
       }
-      .lds-ring div {
-        box-sizing: border-box;
-        display: block;
-        position: absolute;
-        width: 64px;
-        height: 64px;
-        margin: 8px;
-        border: 8px solid #fff;
-        border-radius: 50%;
-        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-        border-color: #fff transparent transparent transparent;
+      100% {
+        transform: rotate(360deg);
       }
-      .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
-      .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
-      .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
-      @keyframes lds-ring {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
+    }
+
+    .error {
+      color: #ff6b6b;
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
   </style>
 </head>
 <body>
-  <h2>Redirigiendo...</h2>
-  <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+  <main class="hero">
+    <div class="overlay"></div>
+    <div class="lds-ring" id="loader">
+      <div></div><div></div><div></div><div></div>
+    </div>
+    <section class="content">
+      <h1>Laboratorio de Suelos JCH</h1>
+      <div id="error" class="error" style="display:none;"></div>
+    </section>
+  </main>
 
   <script>
-    // 👉 Reemplaza con la URL de tu WebApp publicada
+    // URL del Web App de Google Apps Script (¡SIN ESPACIOS!)
     const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbz81hw8UtP3GTc1L_b5TGiJP_ge3hYNlCOrgNVUQ2DlrKlA3WQk9NICgiVVy2oYJJ83/exec";
 
-    // Leer parámetro "k" de la URL (ej: index.html?k=promo1)
-    function getParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
+    // Obtener parámetro 'k' de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const k = urlParams.get('k')?.trim();
+
+    const loader = document.getElementById('loader');
+    const errorDiv = document.getElementById('error');
+
+    if (!k) {
+      loader.style.display = 'none';
+      errorDiv.textContent = "Código QR no válido.";
+      errorDiv.style.display = 'block';
+      console.warn("Parámetro 'k' no encontrado en la URL.");
+    } else {
+      fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(destinationUrl => {
+          loader.style.display = 'none';
+          if (destinationUrl && destinationUrl.trim()) {
+            console.log("Redirigiendo a:", destinationUrl);
+            window.location.replace(destinationUrl);
+          } else {
+            errorDiv.textContent = "Código QR no reconocido.";
+            errorDiv.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error("Error al procesar el código QR:", err);
+          loader.style.display = 'none';
+          errorDiv.textContent = "Error al procesar la solicitud. Intente nuevamente.";
+          errorDiv.style.display = 'block';
+        });
     }
-
-    async function redirect() {
-      const k = getParam("k");
-      if (!k) {
-        document.body.innerHTML = "<h2>❌ Falta el parámetro 'k'.</h2>";
-        return;
-      }
-
-      try {
-        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`);
-        const data = await response.json();
-
-        if (data.status === "success" && data.url) {
-          // ✅ Redirige a la URL encontrada
-          window.location.href = data.url;
-        } else if (data.status === "not_found") {
-          document.body.innerHTML = `<h2>⚠️ La clave "${k}" no existe.</h2>`;
-        } else {
-          document.body.innerHTML = `<h2>❌ Error: ${data.message || "Unknown error"}</h2>`;
-        }
-      } catch (err) {
-        console.error(err);
-        document.body.innerHTML = "<h2>❌ Error al conectar con el servidor.</h2>";
-      }
-    }
-
-    // Ejecutar al cargar
-    redirect();
   </script>
 </body>
 </html>
