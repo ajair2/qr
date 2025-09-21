@@ -5,70 +5,88 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Laboratorio de Suelos JCH</title>
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;font-family:Arial,Helvetica,sans-serif;}
-    .hero{
-      background:#111 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;
-      height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
+    /* Reset CSS básico */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+    /* Estilos del contenedor principal */
+    .hero {
+      background: #111 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;
+      height: 100vh;
+      display: grid; /* Usar grid para centrar */
+      place-items: center; /* Centrar vertical y horizontalmente */
+      position: relative;
     }
-    .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}
-    .content{position:relative;z-index:2;color:#fff;text-align:center;padding:1rem}
+    .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); }
+
+    /* Estilos del contenido principal */
+    .content {
+      position: relative;
+      z-index: 2;
+      color: #fff;
+      text-align: center;
+      padding: 1rem;
+      max-width: 90%;
+    }
     
-    /* Animación para el título (fade-down) */
-    h1{
-      font-size:2.5rem;
-      letter-spacing:.05em;
-      opacity:0;
-      transform:translateY(-20px);
-      animation:fadeDown 1s ease forwards;
+    /* Animación del título */
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2.5rem); /* Tamaño responsivo */
+      letter-spacing: 0.05em;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeDown 1s ease forwards;
     }
     @keyframes fadeDown {
-      to { opacity:1; transform:translateY(0); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .loader{
-      position:absolute;
-      top:2rem;left:50%;
-      transform:translateX(-50%);
-      z-index:3
+    /* Estilos y animación del loader */
+    .loader {
+      position: absolute;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      color: #fff;
+      display: none; /* Oculto por defecto, se muestra con JS */
+    }
+    .loader.visible { display: block; }
+    .loader svg {
+      width: 48px;
+      height: 48px;
+    }
+    .loader circle {
+      animation: spin 1s infinite linear;
+      transform-origin: 25px 25px; /* Origen de la rotación */
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
-    /* Animación para el mensaje (fade-up) */
-    .message{
-      margin-top:1.25rem;
-      font-size:1rem;
-      opacity:0;
-      transform:translateY(20px);
-      transition:opacity .5s ease, transform .5s ease;
+    /* Mensajes de estado */
+    .message {
+      margin-top: 1.25rem;
+      font-size: 1rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      font-weight: bold;
     }
-    .message.show{
-      opacity:1;
-      transform:translateY(0);
-    }
-    .message.ok{color:#fff}
-    .message.error{color:#ffb3b3}
-
-    .hidden{display:none}
-
-    @media(max-width:600px){
-      h1{font-size:1.6rem}
-    }
+    .message.show { opacity: 1; transform: translateY(0); }
+    .message.ok { color: #fff; }
+    .message.error { color: #ffb3b3; }
   </style>
 </head>
 <body>
   <main class="hero" role="main" aria-live="polite">
     <div class="overlay"></div>
 
-    <div class="loader" id="loader" aria-hidden="false">
-      <!-- spinner simple -->
-      <svg width="48" height="48" viewBox="0 0 50 50" aria-hidden="true">
+    <div class="loader" id="loader" aria-hidden="true">
+      <svg width="48" height="48" viewBox="0 0 50 50">
         <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" stroke-linecap="round" stroke-dasharray="31.4 31.4">
-          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
-        </circle>
+          </circle>
       </svg>
     </div>
 
@@ -79,65 +97,68 @@
   </main>
 
   <script>
+    // URL del endpoint de Apps Script (debe ser el que obtienes al desplegar)
     const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbxwz4nI6XoJbJpAtDEVKcH1mbk7mjonZ9L36QcL0bmhaWq5U01sPHR6BjtUu70qEpEM/exec";
+    const LOADER_TIMEOUT = 6000; // 6 segundos de timeout para la llamada a la API
 
-    const loader = document.getElementById('loader');
+    const loaderEl = document.getElementById('loader');
     const messageEl = document.getElementById('message');
 
-    function showMessage(text, type="ok") {
-      loader.classList.remove('hidden');
+    /** Muestra el mensaje de estado y el loader, si es necesario */
+    function showMessage(text, type = "ok") {
+      loaderEl.classList.add('visible');
       messageEl.textContent = text || '';
       messageEl.className = `message show ${type}`;
     }
 
+    /** Oculta el loader */
     function hideLoader() {
-      loader.classList.add('hidden');
+      loaderEl.classList.remove('visible');
     }
 
-    (async function main(){
+    /** Lógica principal de la aplicación */
+    (async function main() {
       try {
         const params = new URLSearchParams(window.location.search);
         const k = params.get('k');
+
         if (!k) {
-          showMessage('No se encontró el parámetro "k" en la URL.', "error");
-          hideLoader();
-          return;
+          return showMessage('No se encontró el parámetro "k" en la URL.', "error");
         }
 
         showMessage('Buscando destino para el código...');
+
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 6000);
+        const timeoutId = setTimeout(() => controller.abort(), LOADER_TIMEOUT);
 
         const resp = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, {
           method: 'GET',
           signal: controller.signal,
           cache: 'no-store'
         });
-        clearTimeout(timeout);
+
+        clearTimeout(timeoutId);
 
         if (!resp.ok) {
-          showMessage('Error en la comunicación con el servicio. Inténtalo de nuevo.', "error");
-          hideLoader();
-          return;
+          throw new Error('Error de red. Inténtalo de nuevo.');
         }
 
         const data = await resp.json();
-        if (data && data.ok && data.url) {
+        if (data?.ok && data?.url) {
           showMessage('Redirigiendo...', "ok");
           window.location.replace(data.url);
-          return;
+          return; // Detener la ejecución
         } else {
-          const err = (data && data.error) ? data.error : 'URL no encontrada';
-          showMessage('No se encontró la URL asociada: ' + err, "error");
-          hideLoader();
+          const errorMessage = (data?.error) ? `Error: ${data.error}` : 'URL no encontrada.';
+          showMessage(errorMessage, "error");
         }
-
       } catch (err) {
         if (err.name === 'AbortError') {
           showMessage('Tiempo de espera agotado. Inténtalo de nuevo.', "error");
         } else {
           showMessage('Ocurrió un error: ' + (err.message || err), "error");
         }
+      } finally {
         hideLoader();
       }
     })();
@@ -145,8 +166,8 @@
 
   <noscript>
     <meta http-equiv="refresh" content="5;url=/">
-    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#111;color:#fff;">
-      Esta página requiere JavaScript para redirigir. Serás llevado a la página principal en 5s.
+    <div style="position:fixed;inset:0;display:grid;place-items:center;background:#111;color:#fff;text-align:center;padding:1rem;">
+      <p>Esta página requiere JavaScript para redirigir. Serás llevado a la página principal en 5 segundos.</p>
     </div>
   </noscript>
 </body>
