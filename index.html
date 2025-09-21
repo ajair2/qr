@@ -18,7 +18,7 @@
     .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}
     .content{position:relative;z-index:2;color:#fff;text-align:center;padding:1rem}
     
-    /* Animación para el título */
+    /* Animación para el título (fade-down) */
     h1{
       font-size:2.5rem;
       letter-spacing:.05em;
@@ -37,29 +37,20 @@
       z-index:3
     }
 
+    /* Animación para el mensaje (fade-up) */
     .message{
       margin-top:1.25rem;
       font-size:1rem;
       opacity:0;
-      transition:opacity .5s ease;
+      transform:translateY(20px);
+      transition:opacity .5s ease, transform .5s ease;
     }
-    .message.show{opacity:1}
+    .message.show{
+      opacity:1;
+      transform:translateY(0);
+    }
     .message.ok{color:#fff}
     .message.error{color:#ffb3b3}
-
-    .btn{
-      display:inline-block;
-      margin-top:1rem;
-      padding:.5rem 1rem;
-      border-radius:6px;
-      border:0;
-      background:#FF6B35;
-      color:#fff;
-      cursor:pointer;
-      opacity:0;
-      transition:opacity .5s ease;
-    }
-    .btn.show{opacity:1}
 
     .hidden{display:none}
 
@@ -84,7 +75,6 @@
     <section class="content">
       <h1>Laboratorio de Suelos JCH</h1>
       <div class="message" id="message">Verificando código...</div>
-      <button id="goBase" class="btn hidden" aria-label="Ir a la página principal">Ir a la página principal</button>
     </section>
   </main>
 
@@ -93,7 +83,6 @@
 
     const loader = document.getElementById('loader');
     const messageEl = document.getElementById('message');
-    const goBaseBtn = document.getElementById('goBase');
 
     function showMessage(text, type="ok") {
       loader.classList.remove('hidden');
@@ -105,12 +94,6 @@
       loader.classList.add('hidden');
     }
 
-    function showGoBase() {
-      goBaseBtn.classList.remove('hidden');
-      requestAnimationFrame(()=> goBaseBtn.classList.add('show'));
-      goBaseBtn.onclick = () => { window.location.href = '/'; };
-    }
-
     (async function main(){
       try {
         const params = new URLSearchParams(window.location.search);
@@ -118,7 +101,6 @@
         if (!k) {
           showMessage('No se encontró el parámetro "k" en la URL.', "error");
           hideLoader();
-          showGoBase();
           return;
         }
 
@@ -136,7 +118,6 @@
         if (!resp.ok) {
           showMessage('Error en la comunicación con el servicio. Inténtalo de nuevo.', "error");
           hideLoader();
-          showGoBase();
           return;
         }
 
@@ -149,7 +130,6 @@
           const err = (data && data.error) ? data.error : 'URL no encontrada';
           showMessage('No se encontró la URL asociada: ' + err, "error");
           hideLoader();
-          showGoBase();
         }
 
       } catch (err) {
@@ -159,7 +139,6 @@
           showMessage('Ocurrió un error: ' + (err.message || err), "error");
         }
         hideLoader();
-        showGoBase();
       }
     })();
   </script>
