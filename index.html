@@ -5,18 +5,67 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Laboratorio de Suelos JCH</title>
   <style>
-    /* Simplificado: adaptalo a tu diseño */
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;font-family:Arial,Helvetica,sans-serif;}
-    .hero{background:#111 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+    .hero{
+      background:#111 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+    }
     .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}
     .content{position:relative;z-index:2;color:#fff;text-align:center;padding:1rem}
-    h1{font-size:2.5rem;letter-spacing:.05em}
-    .loader{position:absolute;top:2rem;left:50%;transform:translateX(-50%);z-index:3}
-    .message{margin-top:1.25rem;font-size:1rem}
-    .btn{display:inline-block;margin-top:1rem;padding:.5rem 1rem;border-radius:6px;border:0;background:#FF6B35;color:#fff;cursor:pointer}
+    
+    /* Animación para el título */
+    h1{
+      font-size:2.5rem;
+      letter-spacing:.05em;
+      opacity:0;
+      transform:translateY(-20px);
+      animation:fadeDown 1s ease forwards;
+    }
+    @keyframes fadeDown {
+      to { opacity:1; transform:translateY(0); }
+    }
+
+    .loader{
+      position:absolute;
+      top:2rem;left:50%;
+      transform:translateX(-50%);
+      z-index:3
+    }
+
+    .message{
+      margin-top:1.25rem;
+      font-size:1rem;
+      opacity:0;
+      transition:opacity .5s ease;
+    }
+    .message.show{opacity:1}
+    .message.ok{color:#fff}
+    .message.error{color:#ffb3b3}
+
+    .btn{
+      display:inline-block;
+      margin-top:1rem;
+      padding:.5rem 1rem;
+      border-radius:6px;
+      border:0;
+      background:#FF6B35;
+      color:#fff;
+      cursor:pointer;
+      opacity:0;
+      transition:opacity .5s ease;
+    }
+    .btn.show{opacity:1}
+
     .hidden{display:none}
-    @media(max-width:600px){h1{font-size:1.6rem}}
+
+    @media(max-width:600px){
+      h1{font-size:1.6rem}
+    }
   </style>
 </head>
 <body>
@@ -35,26 +84,31 @@
     <section class="content">
       <h1>Laboratorio de Suelos JCH</h1>
       <div class="message" id="message">Verificando código...</div>
-      <button id="goBase" class="btn hidden">Ir a la página principal</button>
+      <button id="goBase" class="btn hidden" aria-label="Ir a la página principal">Ir a la página principal</button>
     </section>
   </main>
 
   <script>
-    // REPLACE con la URL de tu Web App (el /exec)
     const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbxwz4nI6XoJbJpAtDEVKcH1mbk7mjonZ9L36QcL0bmhaWq5U01sPHR6BjtUu70qEpEM/exec";
 
     const loader = document.getElementById('loader');
     const messageEl = document.getElementById('message');
     const goBaseBtn = document.getElementById('goBase');
 
-    function showMessage(text, isError) {
-      loader.classList.toggle('hidden', false);
+    function showMessage(text, type="ok") {
+      loader.classList.remove('hidden');
       messageEl.textContent = text || '';
-      messageEl.style.color = isError ? '#ffb3b3' : '#fff';
+      messageEl.className = `message show ${type}`;
     }
 
     function hideLoader() {
       loader.classList.add('hidden');
+    }
+
+    function showGoBase() {
+      goBaseBtn.classList.remove('hidden');
+      requestAnimationFrame(()=> goBaseBtn.classList.add('show'));
+      goBaseBtn.onclick = () => { window.location.href = '/'; };
     }
 
     (async function main(){
@@ -62,50 +116,50 @@
         const params = new URLSearchParams(window.location.search);
         const k = params.get('k');
         if (!k) {
-          showMessage('No se encontró el parámetro "k" en la URL.', true);
+          showMessage('No se encontró el parámetro "k" en la URL.', "error");
           hideLoader();
-          // mostramos botón para ir al base (si lo conoces)
-          goBaseBtn.classList.remove('hidden');
-          goBaseBtn.onclick = () => { window.location.href = '/'; };
+          showGoBase();
           return;
         }
 
         showMessage('Buscando destino para el código...');
-        // timeout con AbortController
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 6000);
 
-        const resp = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, { method: 'GET', signal: controller.signal, cache: 'no-store' });
+        const resp = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
         clearTimeout(timeout);
 
         if (!resp.ok) {
-          showMessage('Error en la comunicación con el servicio. Inténtalo de nuevo.', true);
+          showMessage('Error en la comunicación con el servicio. Inténtalo de nuevo.', "error");
+          hideLoader();
+          showGoBase();
           return;
         }
 
         const data = await resp.json();
         if (data && data.ok && data.url) {
-          showMessage('Redirigiendo...', false);
-          // reemplaza la ubicación (sin dejar historial)
+          showMessage('Redirigiendo...', "ok");
           window.location.replace(data.url);
           return;
         } else {
           const err = (data && data.error) ? data.error : 'URL no encontrada';
-          showMessage('No se encontró la URL asociada: ' + err, true);
+          showMessage('No se encontró la URL asociada: ' + err, "error");
           hideLoader();
-          goBaseBtn.classList.remove('hidden');
-          goBaseBtn.onclick = () => { window.location.href = '/'; };
+          showGoBase();
         }
 
       } catch (err) {
         if (err.name === 'AbortError') {
-          showMessage('Tiempo de espera agotado. Inténtalo de nuevo.', true);
+          showMessage('Tiempo de espera agotado. Inténtalo de nuevo.', "error");
         } else {
-          showMessage('Ocurrió un error: ' + (err.message || err), true);
+          showMessage('Ocurrió un error: ' + (err.message || err), "error");
         }
         hideLoader();
-        goBaseBtn.classList.remove('hidden');
-        goBaseBtn.onclick = () => { window.location.href = '/'; };
+        showGoBase();
       }
     })();
   </script>
@@ -118,5 +172,3 @@
   </noscript>
 </body>
 </html>
-
-     
