@@ -13,8 +13,8 @@
     .hero {
       background: #111 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;
       height: 100vh;
-      display: grid; /* Usar grid para centrar */
-      place-items: center; /* Centrar vertical y horizontalmente */
+      display: grid;
+      place-items: center;
       position: relative;
     }
     .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); }
@@ -31,7 +31,7 @@
     
     /* Animación del título */
     h1 {
-      font-size: clamp(1.6rem, 5vw, 2.5rem); /* Tamaño responsivo */
+      font-size: clamp(1.6rem, 5vw, 2.5rem);
       letter-spacing: 0.05em;
       opacity: 0;
       transform: translateY(-20px);
@@ -49,7 +49,7 @@
       transform: translateX(-50%);
       z-index: 3;
       color: #fff;
-      display: none; /* Oculto por defecto, se muestra con JS */
+      display: none;
     }
     .loader.visible { display: block; }
     .loader svg {
@@ -58,7 +58,7 @@
     }
     .loader circle {
       animation: spin 1s infinite linear;
-      transform-origin: 25px 25px; /* Origen de la rotación */
+      transform-origin: center;
     }
     @keyframes spin {
       from { transform: rotate(0deg); }
@@ -85,8 +85,7 @@
 
     <div class="loader" id="loader" aria-hidden="true">
       <svg width="48" height="48" viewBox="0 0 50 50">
-        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" stroke-linecap="round" stroke-dasharray="31.4 31.4">
-          </circle>
+        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" stroke-linecap="round" stroke-dasharray="31.4 31.4"></circle>
       </svg>
     </div>
 
@@ -97,71 +96,53 @@
   </main>
 
   <script>
-    // URL del endpoint de Apps Script (debe ser el que obtienes al desplegar)
     const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbx_nO25jLQ7noET6Sg8ek-3v-o1TbEWzNePnAf_Bq6f-po2Jdj44TCgAARqd8vuDsHwRA/exec";
-    const LOADER_TIMEOUT = 6000; // 6 segundos de timeout para la llamada a la API
+    
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const k = urlParams.get('k')?.trim();
+      
+      if (!k) {
+        showMessage('No se proporcionó un código válido.', 'error');
+        return;
+      }
 
-    const loaderEl = document.getElementById('loader');
-    const messageEl = document.getElementById('message');
+      showLoader(true);
+      showMessage('Verificando código...', 'ok');
 
-    /** Muestra el mensaje de estado y el loader, si es necesario */
-    function showMessage(text, type = "ok") {
-      loaderEl.classList.add('visible');
-      messageEl.textContent = text || '';
-      messageEl.className = `message show ${type}`;
-    }
-
-    /** Oculta el loader */
-    function hideLoader() {
-      loaderEl.classList.remove('visible');
-    }
-
-    /** Lógica principal de la aplicación */
-    (async function main() {
       try {
-        const params = new URLSearchParams(window.location.search);
-        const k = params.get('k');
-
-        if (!k) {
-          return showMessage('No se encontró el parámetro "k" en la URL.', "error");
+        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`);
+        if (!response.ok) {
+          throw new Error('Error en la respuesta del servidor.');
         }
-
-        showMessage('Buscando destino para el código...');
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), LOADER_TIMEOUT);
-
-        const resp = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, {
-          method: 'GET',
-          signal: controller.signal,
-          cache: 'no-store'
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!resp.ok) {
-          throw new Error('Error de red. Inténtalo de nuevo.');
-        }
-
-        const data = await resp.json();
-        if (data?.ok && data?.url) {
-          showMessage('Redirigiendo...', "ok");
-          window.location.replace(data.url);
-          return; // Detener la ejecución
+        const url = await response.text();
+        
+        if (url) {
+          showMessage('Redirigiendo...', 'ok');
+          setTimeout(() => window.location.replace(url), 1000); // Delay para UX
         } else {
-          const errorMessage = (data?.error) ? `Error: ${data.error}` : 'URL no encontrada.';
-          showMessage(errorMessage, "error");
+          showMessage('Código no encontrado o inválido.', 'error');
         }
       } catch (err) {
-        if (err.name === 'AbortError') {
-          showMessage('Tiempo de espera agotado. Inténtalo de nuevo.', "error");
-        } else {
-          showMessage('Ocurrió un error: ' + (err.message || err), "error");
-        }
+        console.error(err);
+        showMessage('Error al verificar el código. Intenta nuevamente.', 'error');
       } finally {
-        hideLoader();
+        showLoader(false);
       }
-    })();
+    }
+
+    function showLoader(visible) {
+      document.getElementById('loader').classList.toggle('visible', visible);
+    }
+
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.classList.remove('ok', 'error', 'show');
+      msg.classList.add(type, 'show');
+    }
+
+    init();
   </script>
 
   <noscript>
