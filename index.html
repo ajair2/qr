@@ -1,150 +1,64 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Laboratorio de Suelos JCH</title>
   <style>
-    /* Reset CSS básico */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-
-    /* Estilos del contenedor principal */
-    .hero {
-      background: #111 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;
-      height: 100vh;
-      display: grid;
-      place-items: center;
-      position: relative;
-    }
-    .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); }
-
-    /* Estilos del contenido principal */
-    .content {
-      position: relative;
-      z-index: 2;
-      color: #fff;
-      text-align: center;
-      padding: 1rem;
-      max-width: 90%;
-    }
-    
-    /* Animación del título */
-    h1 {
-      font-size: clamp(1.6rem, 5vw, 2.5rem);
-      letter-spacing: 0.05em;
-      opacity: 0;
-      transform: translateY(-20px);
-      animation: fadeDown 1s ease forwards;
-    }
-    @keyframes fadeDown {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Estilos y animación del loader */
-    .loader {
-      position: absolute;
-      top: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 3;
-      color: #fff;
-      display: none;
-    }
-    .loader.visible { display: block; }
-    .loader svg {
-      width: 48px;
-      height: 48px;
-    }
-    .loader circle {
-      animation: spin 1s infinite linear;
-      transform-origin: center;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Mensajes de estado */
-    .message {
-      margin-top: 1.25rem;
-      font-size: 1rem;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-      font-weight: bold;
-    }
-    .message.show { opacity: 1; transform: translateY(0); }
-    .message.ok { color: #fff; }
-    .message.error { color: #ffb3b3; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}.hero{background:#111 ur[](https://laboratoriodesuelosjch.github.io/img/back-1.jpg) no-repeat center/cover;height:100vh;display:grid;place-items:center;position:relative}.overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}.content{position:relative;z-index:2;color:#fff;text-align:center;padding:1rem;max-width:90%}h1{font-size:clamp(1.6rem,5vw,2.5rem);letter-spacing:.05em;opacity:0;transform:translateY(-20px);animation:fadeDown 1s ease forwards}@keyframes fadeDown{to{opacity:1;transform:translateY(0)}}.loader{position:absolute;top:2rem;left:50%;transform:translateX(-50%);z-index:3;color:#fff;display:none}.loader.visible{display:block}.loader svg{width:48px;height:48px}.loader circle{animation:spin 1s infinite linear;transform-origin:25px 25px}@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}.message{margin-top:1.25rem;font-size:1rem;opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;font-weight:bold}.message.show{opacity:1;transform:translateY(0)}.message.ok{color:#fff}.message.error{color:#ffb3b3}
   </style>
 </head>
 <body>
   <main class="hero" role="main" aria-live="polite">
     <div class="overlay"></div>
-
     <div class="loader" id="loader" aria-hidden="true">
       <svg width="48" height="48" viewBox="0 0 50 50">
         <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" stroke-linecap="round" stroke-dasharray="31.4 31.4"></circle>
       </svg>
     </div>
-
     <section class="content">
       <h1>Laboratorio de Suelos JCH</h1>
       <div class="message" id="message">Verificando código...</div>
     </section>
   </main>
-
   <script>
-    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbytlCBGhRjg3VKmGlDxDaONaa0kXp7zSY-HvZ3v16M-wfI83KpNcB1RAXjQkoWjZEJkcA/exec";
-    
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbyhRIBHq976FeYtw4LCJls3RB2B4h-n_9UrSCmzQJQiQEx4UvOKXhMjcq1_KoJhqwX0uw/exec";
+    const messageEl = document.getElementById('message');
+    const loaderEl = document.getElementById('loader');
+
     async function init() {
       const urlParams = new URLSearchParams(window.location.search);
-      const k = urlParams.get('k')?.trim();
-      
+      const k = urlParams.get('k');
       if (!k) {
-        showMessage('No se proporcionó un código válido.', 'error');
+        messageEl.textContent = 'Código no proporcionado.';
+        messageEl.classList.add('show', 'error');
         return;
       }
 
-      showLoader(true);
-      showMessage('Verificando código...', 'ok');
+      messageEl.classList.add('show', 'ok');
+      loaderEl.classList.add('visible');
 
       try {
         const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`);
-        if (!response.ok) {
-          throw new Error('Error en la respuesta del servidor.');
-        }
+        if (!response.ok) throw new Error('Respuesta no válida');
         const url = await response.text();
-        
         if (url) {
-          showMessage('Redirigiendo...', 'ok');
-          setTimeout(() => window.location.replace(url), 1000); // Delay para UX
+          window.location.replace(url);
         } else {
-          showMessage('Código no encontrado o inválido.', 'error');
+          throw new Error('URL no encontrada');
         }
       } catch (err) {
         console.error(err);
-        showMessage('Error al verificar el código. Intenta nuevamente.', 'error');
+        messageEl.textContent = 'Error al verificar el código. Intenta nuevamente.';
+        messageEl.classList.remove('ok');
+        messageEl.classList.add('error');
       } finally {
-        showLoader(false);
+        loaderEl.classList.remove('visible');
       }
-    }
-
-    function showLoader(visible) {
-      document.getElementById('loader').classList.toggle('visible', visible);
-    }
-
-    function showMessage(text, type) {
-      const msg = document.getElementById('message');
-      msg.textContent = text;
-      msg.classList.remove('ok', 'error', 'show');
-      msg.classList.add(type, 'show');
     }
 
     init();
   </script>
-
   <noscript>
     <meta http-equiv="refresh" content="5;url=/">
     <div style="position:fixed;inset:0;display:grid;place-items:center;background:#111;color:#fff;text-align:center;padding:1rem;">
