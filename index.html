@@ -4,9 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Laboratorio de Suelos JCH</title>
-  <link rel="preload" href="/img/back-1.jpg" as="image">
+  <link rel="preload" href="https://laboratoriodesuelosjch.github.io/img/back-1.jpg" as="image">
   <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}.hero{background:#333 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;height:100vh;display:grid;place-items:center;position:relative}.overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}.content{position:relative;z-index:2;color:#fff;text-align:center;padding:1rem;max-width:90%}h1{font-size:clamp(1.6rem,5vw,2.5rem);letter-spacing:.05em;opacity:0;transform:translateY(-20px);animation:fadeDown 1s ease forwards}@keyframes fadeDown{to{opacity:1;transform:translateY(0)}}.loader{position:absolute;top:2rem;left:50%;transform:translateX(-50%);z-index:3;color:#fff;display:none}.loader.visible{display:block}.loader svg{width:48px;height:48px}.loader circle{animation:spin 1s infinite linear;transform-origin:25px 25px}@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}.message{margin-top:1.25rem;font-size:1rem;opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;font-weight:bold}.message.show{opacity:1;transform:translateY(0)}.message.ok{color:#fff}.message.error{color:#ffb3b3}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .hero { background: #333 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover; height: 100vh; display: grid; place-items: center; position: relative; }
+    .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, .6); }
+    .content { position: relative; z-index: 2; color: #fff; text-align: center; padding: 1rem; max-width: 90%; }
+    h1 { font-size: clamp(1.6rem, 5vw, 2.5rem); letter-spacing: .05em; opacity: 0; transform: translateY(-20px); animation: fadeDown 1s ease forwards; }
+    @keyframes fadeDown { to { opacity: 1; transform: translateY(0); } }
+    .loader { position: absolute; top: 2rem; left: 50%; transform: translateX(-50%); z-index: 3; color: #fff; display: none; }
+    .loader.visible { display: block; }
+    .loader svg { width: 48px; height: 48px; }
+    .loader circle { animation: spin 1s infinite linear; transform-origin: 25px 25px; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .message { margin-top: 1.25rem; font-size: 1rem; opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s ease; font-weight: bold; }
+    .message.show { opacity: 1; transform: translateY(0); }
+    .message.ok { color: #fff; }
+    .message.error { color: #ffb3b3; }
   </style>
 </head>
 <body>
@@ -23,42 +38,68 @@
     </section>
   </main>
   <script>
-    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbyhRIBHq976FeYtw4LCJls3RB2B4h-n_9UrSCmzQJQiQEx4UvOKXhMjcq1_KoJhqwX0uw/exec";
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbyWgvbacfFvjMAAslOpZK1r_fROaDLzqm7Gc_6UESpB2Ycp8UouAZILNM4gO9qscHslig/exec";
     const messageEl = document.getElementById('message');
     const loaderEl = document.getElementById('loader');
 
     async function init() {
       const urlParams = new URLSearchParams(window.location.search);
-      const k = urlParams.get('k');
+      const k = urlParams.get('k')?.trim();
       if (!k) {
-        messageEl.textContent = 'Código no proporcionado.';
-        messageEl.classList.add('show', 'error');
+        showError('Código no proporcionado.');
         return;
       }
 
+      showLoading(true);
+      messageEl.textContent = 'Verificando código...';
       messageEl.classList.add('show', 'ok');
-      loaderEl.classList.add('visible');
 
       try {
-        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, { signal: AbortSignal.timeout(5000) });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (!response.ok) throw new Error('Error en el servidor');
-        const url = await response.text();
-        if (url) {
-          window.location.replace(url);
-        } else {
-          throw new Error('Código no válido');
-        }
+        const url = (await response.text()).trim();
+        if (!url || !isValidUrl(url)) throw new Error('URL no válida');
+
+        window.location.replace(url);
       } catch (err) {
         console.error(err);
-        messageEl.textContent = err.message === 'Error en el servidor' ? 'Error de conexión. Intenta nuevamente.' : 'Código no válido. Verifica e intenta de nuevo.';
-        messageEl.classList.remove('ok');
-        messageEl.classList.add('error');
+        const errMsg = err.name === 'AbortError' ? 'Tiempo de espera agotado. Intenta nuevamente.' :
+                       err.message === 'Error en el servidor' ? 'Error de conexión. Intenta nuevamente.' :
+                       'Código no válido. Verifica e intenta de nuevo.';
+        showError(errMsg);
       } finally {
-        loaderEl.classList.remove('visible');
+        showLoading(false);
       }
     }
 
-    init();
+    function showLoading(isLoading) {
+      loaderEl.classList.toggle('visible', isLoading);
+    }
+
+    function showError(msg) {
+      messageEl.textContent = msg;
+      messageEl.classList.remove('ok');
+      messageEl.classList.add('error');
+    }
+
+    function isValidUrl(url) {
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    if (!navigator.onLine) {
+      showError('Sin conexión a internet. Conecta y recarga.');
+    } else {
+      init();
+    }
   </script>
   <noscript>
     <meta http-equiv="refresh" content="5;url=/">
