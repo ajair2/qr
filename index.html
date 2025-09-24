@@ -1,34 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://laboratoriodesuelosjch.github.io; connect-src 'self' https://script.google.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
   <title>Laboratorio de Suelos JCH</title>
   <link rel="preload" href="https://laboratoriodesuelosjch.github.io/img/back-1.jpg" as="image">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    .hero { background: #333 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover; height: 100vh; display: grid; place-items: center; position: relative; }
-    .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, .6); }
-    .content { position: relative; z-index: 2; color: #fff; text-align: center; padding: 1rem; max-width: 90%; }
-    h1 { font-size: clamp(1.6rem, 5vw, 2.5rem); letter-spacing: .05em; opacity: 0; transform: translateY(-20px); animation: fadeDown 1s ease forwards; }
+    html, body { height: 100%; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .hero {
+      background: #333 url('https://laboratoriodesuelosjch.github.io/img/back-1.jpg') no-repeat center/cover;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+    .overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); }
+    .content {
+      position: relative;
+      z-index: 2;
+      color: #fff;
+      text-align: center;
+      padding: 1rem;
+      max-width: 90%;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2.5rem);
+      letter-spacing: 0.05em;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeDown 1s ease forwards;
+    }
     @keyframes fadeDown { to { opacity: 1; transform: translateY(0); } }
-    .loader { position: absolute; top: 2rem; left: 50%; transform: translateX(-50%); z-index: 3; color: #fff; display: none; }
+    .loader {
+      position: absolute;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      color: #fff;
+      display: none;
+    }
     .loader.visible { display: block; }
     .loader svg { width: 48px; height: 48px; }
-    .loader circle { animation: spin 1s infinite linear; transform-origin: 25px 25px; }
+    .loader circle {
+      animation: spin 1s infinite linear;
+      transform-origin: center;
+    }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .message { margin-top: 1.25rem; font-size: 1rem; opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s ease; font-weight: bold; }
+    .message {
+      margin-top: 1.25rem;
+      font-size: 1rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      font-weight: bold;
+    }
     .message.show { opacity: 1; transform: translateY(0); }
     .message.ok { color: #fff; }
     .message.error { color: #ffb3b3; }
+    @media (max-width: 600px) {
+      h1 { font-size: clamp(1.4rem, 4vw, 2rem); }
+      .message { font-size: 0.9rem; }
+    }
   </style>
 </head>
 <body>
   <main class="hero" role="main" aria-live="polite">
     <div class="overlay"></div>
     <div class="loader" id="loader" aria-hidden="true">
-      <svg width="48" height="48" viewBox="0 0 50 50">
+      <svg width="48" height="48" viewBox="0 0 50 50" aria-label="Cargando">
         <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="transparent" stroke-linecap="round" stroke-dasharray="31.4 31.4"></circle>
       </svg>
     </div>
@@ -38,72 +80,53 @@
     </section>
   </main>
   <script>
-    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbyWgvbacfFvjMAAslOpZK1r_fROaDLzqm7Gc_6UESpB2Ycp8UouAZILNM4gO9qscHslig/exec";
+    const AS_URL_BASE = "https://script.google.com/macros/s/AKfycbyFoAiw4nPL3wvIzgjuk4T-77yHGVncHMVyHE4lASwLNADLPsmoyUbyD79GZRA6j_E/exec";
     const messageEl = document.getElementById('message');
     const loaderEl = document.getElementById('loader');
 
     async function init() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const k = urlParams.get('k')?.trim();
-      if (!k) {
-        showError('Código no proporcionado.');
-        return;
-      }
-
-      showLoading(true);
-      messageEl.textContent = 'Verificando código...';
-      messageEl.classList.add('show', 'ok');
-
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, { signal: controller.signal });
-        clearTimeout(timeoutId);
+        const urlParams = new URLSearchParams(window.location.search);
+        const k = urlParams.get('k')?.trim();
+        if (!k) {
+          throw new Error('Código no proporcionado');
+        }
 
-        if (!response.ok) throw new Error('Error en el servidor');
-        const url = (await response.text()).trim();
-        if (!url || !isValidUrl(url)) throw new Error('URL no válida');
+        messageEl.classList.add('show', 'ok');
+        loaderEl.classList.add('visible');
+
+        const response = await fetch(`${AS_URL_BASE}?k=${encodeURIComponent(k)}`, {
+          signal: AbortSignal.timeout(5000),
+          headers: { 'Accept': 'text/plain' }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error en el servidor');
+        }
+
+        const url = await response.text();
+        if (!url) {
+          throw new Error('Código no válido');
+        }
 
         window.location.replace(url);
       } catch (err) {
-        console.error(err);
-        const errMsg = err.name === 'AbortError' ? 'Tiempo de espera agotado. Intenta nuevamente.' :
-                       err.message === 'Error en el servidor' ? 'Error de conexión. Intenta nuevamente.' :
-                       'Código no válido. Verifica e intenta de nuevo.';
-        showError(errMsg);
+        console.error('Error:', err);
+        messageEl.textContent = err.message === 'Error en el servidor' 
+          ? 'Error de conexión. Intenta nuevamente.' 
+          : 'Código no válido. Verifica e intenta de nuevo.';
+        messageEl.classList.remove('ok');
+        messageEl.classList.add('error');
       } finally {
-        showLoading(false);
+        loaderEl.classList.remove('visible');
       }
     }
 
-    function showLoading(isLoading) {
-      loaderEl.classList.toggle('visible', isLoading);
-    }
-
-    function showError(msg) {
-      messageEl.textContent = msg;
-      messageEl.classList.remove('ok');
-      messageEl.classList.add('error');
-    }
-
-    function isValidUrl(url) {
-      try {
-        new URL(url);
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    if (!navigator.onLine) {
-      showError('Sin conexión a internet. Conecta y recarga.');
-    } else {
-      init();
-    }
+    init().catch(err => console.error('Initialization failed:', err));
   </script>
   <noscript>
     <meta http-equiv="refresh" content="5;url=/">
-    <div style="position:fixed;inset:0;display:grid;place-items:center;background:#333;color:#fff;text-align:center;padding:1rem;">
+    <div style="position: fixed; inset: 0; display: grid; place-items: center; background: #333; color: #fff; text-align: center; padding: 1rem;">
       <p>Esta página requiere JavaScript para redirigir. Serás llevado a la página principal en 5 segundos.</p>
     </div>
   </noscript>
